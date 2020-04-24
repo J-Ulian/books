@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
+from helpers import apology
 
 app = Flask(__name__)
 
@@ -25,7 +26,8 @@ db = scoped_session(sessionmaker(bind=engine))
 
 @app.route("/")
 def index():
-    return render_template("login.html")
+    
+    return render_template("empty.html")
 
 
 
@@ -34,13 +36,35 @@ def login():
     """Log user in"""
 
     # Forget any user id
-   # session.clear()
+    session.clear()
 
     # User reached route via POST
-    if request.form.get == "POST":
-        return "TO DO"
+    if request.method == "POST":
+        
+        if not request.form.get("username"):
+            return apology("must provide username", 403)
 
-    elif request.form.get == "GET":
+        elif not request.form.get("password"):
+            return apology("must provide password", 403)
+        
+        # Query database for username
+        rows = db.execute("SELECT * FROM users WHERE username = :username",
+                           username=request.form.get("username")).fetchall()
+
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+            return apology("invalid username and/or password", 403)
+
+        session["user_id"] = rows[0]["id"]
+
+        return redirect("/")        
+
+
+    elif request.method == "GET":
         return render_template("login.html")
     else:
-        return render_template("login.html")
+        return apology("something went terribly wrong")
+
+
+@app.route("/logout")
+def logout():
+    return render_template("empty.html")
