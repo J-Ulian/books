@@ -26,8 +26,12 @@ db = scoped_session(sessionmaker(bind=engine))
 
 @app.route("/")
 def index():
-    
-    return render_template("empty.html")
+
+    try:
+        if session["user_id"] != None:
+            return render_template("empty.html")
+    except:
+        return redirect("/login")
 
 
 
@@ -71,7 +75,7 @@ def logout():
 
     session.clear()
 
-    return redirect("/")
+    return redirect("/login")
 
 
 @app.route("/register", methods=["GET", "POST"])
