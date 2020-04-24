@@ -49,7 +49,7 @@ def login():
         
         # Query database for username
         rows = db.execute("SELECT * FROM users WHERE username = :username",
-                           username=request.form.get("username")).fetchall()
+                           {"username": request.form.get("username")}).fetchall()
 
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
             return apology("invalid username and/or password", 403)
@@ -67,4 +67,40 @@ def login():
 
 @app.route("/logout")
 def logout():
-    return render_template("empty.html")
+    """Log user out"""
+
+    session.clear()
+
+    return redirect("/")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Register user"""
+    session.clear()
+
+    # User reached route via GET
+    if request.method == "GET":
+        return render_template("register.html")
+
+    # User reached route via POST
+    if request.method == "POST":
+        # Make sure username is unique
+        name = request.form.get("username")
+        if db.execute("SELECT * FROM users where username = :username", {"username": name}).rowcount == 1:
+            return apology("username is already taken")
+        elif not request.form.get("username", 403):
+            return apology("must provide username", 403)
+        elif not request.form.get("password"):
+            return apology("must provide password", 403)
+        elif not request.form.get("passwordcontrol"):
+            return apology("must confirm password", 403)
+        elif request.form.get("password") != request.form.get("passwordcontrol"):
+            return apology("must match password", 403)
+        db.execute ("INSERT INTO users (username, hash) VALUES (:name, :hash)",
+                {"name": name, "hash": generate_password_hash(request.form.get("password"))})
+        db.commit()
+        return render_template("registred.html")
+
+
+
