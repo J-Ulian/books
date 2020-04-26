@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import apology
+from helpers import apology, login_required
 
 app = Flask(__name__)
 
@@ -28,7 +28,7 @@ db = scoped_session(sessionmaker(bind=engine))
 def index():
 
     try:
-        if session["user_id"] != None:
+        if session["user_id"]:
             return render_template("empty.html")
     except:
         return redirect("/login")
@@ -93,7 +93,7 @@ def register():
         name = request.form.get("username")
         if db.execute("SELECT * FROM users where username = :username", {"username": name}).rowcount == 1:
             return apology("username is already taken")
-        elif not request.form.get("username", 403):
+        elif not request.form.get("username"):
             return apology("must provide username", 403)
         elif not request.form.get("password"):
             return apology("must provide password", 403)
@@ -106,5 +106,31 @@ def register():
         db.commit()
         return render_template("registred.html")
 
+@app.route("/search", methods=["GET", "POST"])
+@login_required
+def search():
 
+    # User reached route via GET
+    if request.method == "GET":
+        return render_template("search.html")
 
+    # User reached route via POST(regular expressions)
+    if request.method == "POST":
+        if not request.form.get("isbn") and not request.form.get("title") and not request.form.get("author"):
+            return apology("must provide something", 403)
+        elif request.form.get("isbn") and not request.form.get("title") and not request.form.get("author"):           
+            books = db.execute("SELECT * FROM books WHERE isbn LIKE :isbn",
+                                {"isbn":"%" + request.form.get("isbn") + "%"}).fetchall()
+            if len(books) < 1:
+                return apology("incorrect isbn")
+            else:
+                return apology("correct")
+            return apology("isbn")
+        elif request.form.get("title") and not request.form.get("isbn") and not request.form.get("author"):
+            return apology("title")
+        elif request.form.get("author") and not request.form.get("title") and not request.form.get("isbn"):
+            return apology("author")
+        else:
+            return apology("must provide only isbn or title or author")
+
+          
