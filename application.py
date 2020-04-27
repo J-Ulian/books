@@ -124,13 +124,61 @@ def search():
             if len(books) < 1:
                 return apology("incorrect isbn")
             else:
-                return apology("correct")
-            return apology("isbn")
+                return render_template("searchresult.html", books = books)
+            
         elif request.form.get("title") and not request.form.get("isbn") and not request.form.get("author"):
-            return apology("title")
+            books = db.execute("SELECT * FROM books WHERE LOWER (title) LIKE LOWER (:title)",
+                                {"title":"%" + request.form.get("title") + "%"}).fetchall()
+            if len(books) < 1:
+                return apology("incorrect title")
+            else:
+                return render_template("searchresult.html", books = books)
+            
         elif request.form.get("author") and not request.form.get("title") and not request.form.get("isbn"):
-            return apology("author")
+            books = db.execute("SELECT * FROM books WHERE LOWER (author) LIKE LOWER (:author)",
+                                {"author":"%" + request.form.get("author") + "%"}).fetchall()
+            if len(books) < 1:
+                return apology("incorrect author")
+            else:
+                return render_template("searchresult.html", books = books)
+            
         else:
             return apology("must provide only isbn or title or author")
+
+
+@app.route("/search/<int:book_id>", methods=["GET", "POST"])
+def book(book_id):
+    """List details about a  book."""
+    book = db.execute("SELECT * FROM books WHERE book_id = :book_id", {"book_id": book_id}).fetchone()
+    reviews = db.execute("SELECT * FROM reviews WHERE book_id = :book_id", {"book_id": book_id}).fetchall()
+    if request.method == "GET":
+        return render_template("book.html", book=book, reviews=reviews)
+    if request.method == "POST":
+        if not request.form.get("review"):
+            return apology("must submit review", 403)
+        db.execute ("INSERT INTO reviews (review, book_id, user_id, rating) VALUES (:review, :book_id, :user_id, :rating)",
+                {"review": request.form.get("review"), "book_id": book_id, "user_id": session["user_id"], "rating": request.form.get("rating")})
+        db.commit()
+        reviews = db.execute("SELECT * FROM reviews WHERE book_id = :book_id", {"book_id": book_id}).fetchall()
+        return render_template("book.html", book=book, reviews=reviews)
+
+
+
+
+
+@app.route("/flights/<int:flight_id>")
+def flight(flight_id):
+    """List details about a single flight."""
+
+    # Make sure flight exists.
+    flight = db.execute("SELECT * FROM flights WHERE id = :id", {"id": flight_id}).fetchone()
+    if flight is None:
+        return render_template("error.html", message="No such flight.")
+
+    # Get all passengers.
+    passengers = db.execute("SELECT name FROM passengers WHERE flight_id = :flight_id",
+                            {"flight_id": flight_id}).fetchall()
+    return render_template("flight.html", flight=flight, passengers=passengers)
+
 
           

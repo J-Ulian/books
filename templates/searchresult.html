@@ -1,0 +1,47 @@
+
+
+{% extends "layout.html" %}
+
+{% block title %}
+    Books details
+{% endblock %}
+
+{% block main %}
+ <table class="table table-striped">
+        <thead class ="thead-light">
+             <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Publication year</th>
+                <th>ISBN number</th>
+                <th>Reviews</th>
+                <th>Ratings</th>
+                <th>Average</th>
+            </tr>
+        </thead>
+        <tfoot>
+           
+        </tfoot>
+        <tbody>
+            {% for book in books %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('book', book_id=book.book_id) }}">
+                            {{ book.title }}
+                        </a>
+                    </td>                   
+                    <td>{{ book["author"] }}</td>
+                    <td>{{ book["year"] }}</td>
+                    <td>{{ book["isbn"] }}</td>
+                    <td>"Reviews"</td>
+                    <td>"Ratings"</td>
+                    <td>"Average"</td>
+                </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+{% endblock %}
+
+
+
