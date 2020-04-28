@@ -36,10 +36,7 @@
             <div class="collapse navbar-collapse" id="navbar">
                 {% if session.user_id %}
                     <ul class="navbar-nav mr-auto mt-2">
-                        <li class="nav-item"><a class="nav-link" href="/search">Search</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/buy">Buy</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/sell">Sell</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/search">Search and write reviews for your favourite books</a></li>   
                     </ul>
                     <ul class="navbar-nav ml-auto mt-2">
                         <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
@@ -62,14 +59,14 @@
         {% endif %}
 
         <main class="container p-5">
+        <h2 style="margin-bottom: 1%">Book Information</h2>
              <table class="table table-striped">
         <thead class ="thead-light">
              <tr>
                 <th>Title</th>
                 <th>Author</th>
                 <th>Publication year</th>
-                <th>ISBN number</th>
-                <th>Reviews</th>
+                <th>ISBN number</th>                
                 <th>Ratings</th>
                 <th>Average</th>
             </tr>
@@ -79,17 +76,13 @@
         </tfoot>
         <tbody>
                 <tr>
-                    <td>
-                        <a href="{{ url_for('book', book_id=book.book_id) }}">
-                            {{ book.title }}
-                        </a>
+                    <td> {{ book.title }}                      
                     </td>                   
                     <td>{{ book["author"] }}</td>
                     <td>{{ book["year"] }}</td>
-                    <td>{{ book["isbn"] }}</td>
-                    <td>"Reviews"</td>
-                    <td>"Ratings"</td>
-                    <td>"Average"</td>
+                    <td>{{ book["isbn"] }}</td>                    
+                    <td>{{ rate_num }}</td>
+                    <td>{{ rate_avg }}</td>
                 </tr>
             
         </tbody>
@@ -100,7 +93,17 @@
         {% for review in reviews %}
             <li>{{ review.review }}</li>
 
-             <form action="{{ url_for('book', book_id=book.book_id) }}" method="post" >        
+             <form action="{{ url_for('book', book_id=book.book_id) }}" method="post" >    
+             <div style="margin:1%" class="form-group">
+            <label for="exampleFormControlSelect1">Rate this book</label>
+            <select class="form-control" id="exampleFormControlSelect1" name="rating">
+                 <option>1</option>
+                 <option>2</option>
+             <option>3</option>
+             <option>4</option>
+             <option>5</option>
+            </select>
+             </div>      
                 <div class="form-group">
                 <label for="exampleFormControlTextarea1">Write a review</label>
                 <textarea class="form-control" id="exampleFormControlTextarea1" name="review" rows="3"></textarea>
@@ -112,22 +115,22 @@
         
          <form action="{{ url_for('book', book_id=book.book_id) }}" method="post">      
          <div class="form-group">
-    <label for="exampleFormControlSelect1">Example select</label>
-    <select class="form-control" id="exampleFormControlSelect1" name="rating">
-      <option>1</option>
-      <option>2</option>
-      <option>3</option>
-      <option>4</option>
-      <option>5</option>
-    </select>
-  </div>  
+            <label for="exampleFormControlSelect1">Rate this book</label>
+            <select class="form-control" id="exampleFormControlSelect1" name="rating">
+             <option>1</option>
+             <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            </select>
+         </div>  
          <div class="form-group">
-            <label for="exampleFormControlTextarea1">Example textarea</label>
+            <label for="exampleFormControlTextarea1">Write a review</label>
              <textarea class="form-control" id="exampleFormControlTextarea1" name="review" rows="3"></textarea>
              </div>
              <button type="submit" class="btn btn-primary">Submit</button>
         </form>
-            <li>No reviews.</li>
+            
         {% endfor %}
     </ul>
         </main>

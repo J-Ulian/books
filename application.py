@@ -1,12 +1,13 @@
-import os
+import os, requests
 
-from flask import Flask, request, session, redirect, render_template, session
+from flask import Flask, request, session, redirect, render_template, session, jsonify
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import apology, login_required
+
 
 app = Flask(__name__)
 
@@ -29,7 +30,7 @@ def index():
 
     try:
         if session["user_id"]:
-            return render_template("empty.html")
+            return redirect("/search")
     except:
         return redirect("/login")
 
@@ -151,34 +152,45 @@ def book(book_id):
     """List details about a  book."""
     book = db.execute("SELECT * FROM books WHERE book_id = :book_id", {"book_id": book_id}).fetchone()
     reviews = db.execute("SELECT * FROM reviews WHERE book_id = :book_id", {"book_id": book_id}).fetchall()
+    res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "c9HGXkvFeHw1DG0wSLeQ", "isbns": book.isbn})
+    data = res.json()    
+    rate_num = data["books"][0]["work_ratings_count"]    
+    rate_avg = data["books"][0]["average_rating"]
+    
     if request.method == "GET":
-        return render_template("book.html", book=book, reviews=reviews)
+        return render_template("book.html", book=book, reviews=reviews, rate_num=rate_num, rate_avg=rate_avg)
     if request.method == "POST":
-        if not request.form.get("review"):
-            return apology("must submit review", 403)
+        if not request.form.get("review") or not request.form.get("rating"):
+            return apology("must submit review and rating", 403)
         db.execute ("INSERT INTO reviews (review, book_id, user_id, rating) VALUES (:review, :book_id, :user_id, :rating)",
                 {"review": request.form.get("review"), "book_id": book_id, "user_id": session["user_id"], "rating": request.form.get("rating")})
         db.commit()
         reviews = db.execute("SELECT * FROM reviews WHERE book_id = :book_id", {"book_id": book_id}).fetchall()
-        return render_template("book.html", book=book, reviews=reviews)
+        return render_template("book.html", book=book, reviews=reviews, rate_num=rate_num, rate_avg=rate_avg)
 
+@app.route("/api/<isbn>")
+def book_api(isbn):
+    """Return details about a book."""
 
+    # Make sure book exists.
+    book = db.execute("SELECT * FROM books WHERE isbn = :isbn", {"isbn": isbn}).fetchone()
+    if book is None:
+        return jsonify({"error": "Invalid ISBN"}), 404
 
+    # Get rating information.
+    res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "c9HGXkvFeHw1DG0wSLeQ", "isbns": book.isbn})
+    data = res.json()    
+    rate_num = data["books"][0]["work_ratings_count"]    
+    rate_avg = data["books"][0]["average_rating"]
+    
+    return jsonify({
+        "title": book.title,
+        "author": book.author,
+        "year": book.year,
+        "isbn": isbn,
+        "review_count": rate_num,
+        "average_score": rate_avg
+    })
 
+    
 
-@app.route("/flights/<int:flight_id>")
-def flight(flight_id):
-    """List details about a single flight."""
-
-    # Make sure flight exists.
-    flight = db.execute("SELECT * FROM flights WHERE id = :id", {"id": flight_id}).fetchone()
-    if flight is None:
-        return render_template("error.html", message="No such flight.")
-
-    # Get all passengers.
-    passengers = db.execute("SELECT name FROM passengers WHERE flight_id = :flight_id",
-                            {"flight_id": flight_id}).fetchall()
-    return render_template("flight.html", flight=flight, passengers=passengers)
-
-
-          
